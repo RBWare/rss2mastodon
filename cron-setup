@@ -1,0 +1,9 @@
+crontab -e
+
+paste the next 2 lines...
+
+# Every 3 minutes between 4AM and 11PM M-F
+*/3 4-23 * * 1-5 /usr/bin/python3 /path/to/your_script.py >> /path/to/log.txt 2>&1
+
+# Every 20 minutes between 6 AM and 11 PM S/S
+*/20 6-23 * * 6,0 /usr/bin/python3 /path/to/your_script.py >> /path/to/log.txt 2>&1
