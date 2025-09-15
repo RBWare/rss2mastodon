@@ -72,7 +72,8 @@ for config in feed_configs:
         if not entry_id or entry_id in posted_ids:
             continue
 
-        status = f"{entry.title}\n{entry.link}"
+        text = entry.get("summary") or entry.get("description") or entry.get("title")
+        status = f"{text.strip()}\n\n{entry.link}"
         media_ids = []
 
         # === TRY TO EXTRACT MEDIA ===
