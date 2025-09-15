@@ -79,15 +79,28 @@ for config in feed_configs:
         if not entry_id or entry_id in posted_ids:
             continue
 
+        MAX_CHARS = 500
+
+        
         title = strip_html(entry.get("title", "").strip())
         summary = entry.get("summary") or entry.get("description")
         summary = strip_html(summary.strip()) if summary else ""
+        link = entry.get("link", "").strip()
 
+        # Reserve room for title and link
+        static_part = f"{title}\n\n"
+        link_part = f"\n{link}"
+        available_chars = MAX_CHARS - len(static_part) - len(link_part)
+
+        # Truncate summary if needed
         if summary:
-            text = f"{title}\n\n{summary}"
+            if len(summary) > available_chars:
+                summary = summary[:available_chars].rsplit(" ", 1)[0] + "…"
+            text = f"{static_part}{summary}{link_part}"
         else:
-            text = title
-        status = f"{text}\n\n{entry.link}"
+            text = f"{title}{link_part}"
+
+        status = text.strip()
         media_ids = []
 
         # === TRY TO EXTRACT MEDIA ===
