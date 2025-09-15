@@ -6,4 +6,5 @@ Really simple python script to grab the items from an RSS feed and repost them t
 
 Features:
 - Posts images
+- Option to use multiple, unique accounts
 - Stores ids of previously posted items so repeated posts do not happen
