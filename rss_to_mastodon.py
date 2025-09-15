@@ -63,7 +63,8 @@ for config in feed_configs:
     # === INIT MASTODON CLIENT ===
     mastodon = Mastodon(
         access_token=token,
-        api_base_url=instance
+        api_base_url=instance,
+        ratelimit_method='wait'
     )
     print("Starting to process...")
 
@@ -72,8 +73,15 @@ for config in feed_configs:
         if not entry_id or entry_id in posted_ids:
             continue
 
-        text = entry.get("summary") or entry.get("description") or entry.get("title")
-        status = f"{text.strip()}\n\n{entry.link}"
+        title = entry.get("title", "").strip()
+        summary = entry.get("summary") or entry.get("description")
+        summary = summary.strip() if summary else ""
+
+        if summary:
+            text = f"{title}\n\n{summary}"
+        else:
+            text = title
+        status = f"{text}\n\n{entry.link}"
         media_ids = []
 
         # === TRY TO EXTRACT MEDIA ===
@@ -98,23 +106,37 @@ for config in feed_configs:
 
         # === POST TO MASTODON ===
         try:
+            remaining = mastodon.ratelimit_remaining
+            if remaining is not None and remaining < 5:
+                reset_time = mastodon.ratelimit_reset
+                print(f"⛔ Rate limit near exhaustion ({remaining} remaining). Skipping post.")
+                print(f"⏳ Limit resets at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(reset_time))}")
+                continue
+
+            print("Posting to Mastodon...")
             mastodon.status_post(status, media_ids=media_ids)
             print(f"✅ Posted: {entry.title}")
-            new_ids.add(entry_id)
+
+            posted_ids.add(entry_id)  # ✅ Immediately mark as posted
+
+            # ✅ Save updated ID list after this post
+            with open(id_store_path, "w") as f:
+                json.dump(list(posted_ids), f)
+                print(f"💾 Saved ID for: {entry.title}")
             time.sleep(15)
         except Exception as e:
             print(f"❌ Failed to post '{entry.title}': {e}")
 
-    # === SAVE UPDATED ID LIST ===
-    all_ids = posted_ids.union(new_ids)
-    print(f"📝 New IDs to save: {len(new_ids)}")
-    print(f"🧮 Total known IDs: {len(all_ids)}")
+    # # === SAVE UPDATED ID LIST ===
+    # all_ids = posted_ids.union(new_ids)
+    # print(f"📝 New IDs to save: {len(new_ids)}")
+    # print(f"🧮 Total known IDs: {len(all_ids)}")
     
-    print(f"💾 Saving IDs to: {id_store_path}")
-    try:
-        with open(id_store_path, "w") as f:
-            json.dump(list(all_ids), f)
-        print("✅ ID list saved successfully.")
-    except Exception as e:
-        print(f"❌ Failed to save ID list: {e}")
+    # print(f"💾 Saving IDs to: {id_store_path}")
+    # try:
+    #     with open(id_store_path, "w") as f:
+    #         json.dump(list(all_ids), f)
+    #     print("✅ ID list saved successfully.")
+    # except Exception as e:
+    #     print(f"❌ Failed to save ID list: {e}")
 
