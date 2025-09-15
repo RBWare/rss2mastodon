@@ -6,6 +6,12 @@ from io import BytesIO
 from mastodon import Mastodon
 import hashlib
 import time
+import re
+
+def strip_html(html):
+    """Remove HTML tags from a string."""
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html)
 
 def get_entry_id(entry):
     raw = entry.get("id") or entry.get("guid") or entry.get("link") or (entry.title + entry.link)
@@ -73,9 +79,9 @@ for config in feed_configs:
         if not entry_id or entry_id in posted_ids:
             continue
 
-        title = entry.get("title", "").strip()
+        title = strip_html(entry.get("title", "").strip())
         summary = entry.get("summary") or entry.get("description")
-        summary = summary.strip() if summary else ""
+        summary = strip_html(summary.strip()) if summary else ""
 
         if summary:
             text = f"{title}\n\n{summary}"
