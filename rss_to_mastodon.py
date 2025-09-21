@@ -8,6 +8,11 @@ import hashlib
 import time
 import re
 
+# === GLOBAL HEADERS ===
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0'
+}
+
 def strip_html(html):
     """Remove HTML tags from a string."""
     clean = re.compile('<.*?>')
@@ -46,7 +51,7 @@ for config in feed_configs:
     # === PARSE RSS FEED ===
     try:
         print(f"🌐 Fetching feed: {feed_url}")
-        response = requests.get(feed_url, timeout=10)
+        response = requests.get(feed_url, headers=HEADERS, timeout=10)
         response.raise_for_status()
         feed = feedparser.parse(response.content)
         entries = feed.entries
@@ -113,7 +118,7 @@ for config in feed_configs:
         # === UPLOAD MEDIA ===
         if media_url:
             try:
-                response = requests.get(media_url, timeout=10)
+                response = requests.get(media_url, headers=HEADERS, timeout=10)
                 response.raise_for_status()
                 mime_type = response.headers.get("Content-Type", "image/jpeg")
                 media = BytesIO(response.content)
